@@ -2,141 +2,58 @@
   <img src="https://www.corda.net/wp-content/uploads/2016/11/fg005_corda_b.png" alt="Corda" width="500">
 </p>
 
-# CorDapp Template - Kotlin
+# CorDapp Upgrades
 
-Welcome to the Kotlin CorDapp template. The CorDapp template is a stubbed-out CorDapp that you can use to bootstrap 
-your own CorDapps.
-
-**This is the Kotlin version of the CorDapp template. The Java equivalent is 
-[here](https://github.com/corda/cordapp-template-java/).**
+This sample project will shows you how to upgrade corDapps using explicit approaches.
+Signature Constraint (Implicit-Upgrades) introduced in Corda 4.4 is however the recommended approach to
+perform upgrades in Corda, since it doesn't requires the heavyweight process of creating upgrade transactions 
+for every state on the ledger of all parties.
 
 # Pre-Requisites
 
 See https://docs.corda.net/getting-set-up.html.
 
-# Usage
+# Contract and Flow Version
+This sample project has two version of contracts and State which will used to 
+demonstrate explicit upgrades in Corda.
+This project is use to create a student data base in block-chain where 2 parties are there, one is School and other is
+students.First state contain only fName,lName,fatherName, PartyA and partyB, and the contracts contain only 
+verification regarding that.
 
-## Running tests inside IntelliJ
+*Version 2 of Contract and State*
+The secound version on State contain all the parameter addition to address which we need to add in the upgraded project 
+and the contract verify the required verifications
 
-We recommend editing your IntelliJ preferences so that you use the Gradle runner - this means that the quasar utils
-plugin will make sure that some flags (like ``-javaagent`` - see below) are
-set for you.
+#Explicit Upgrade Steps
+**Step1:** 
+Clean deploy the nodes and the run the nodes.
 
-To switch to using the Gradle runner:
+``./gradlew clean deployNodes
+  ./build/nodes/runnodes``
+  
+**Step2:**
+Register A student from the partyA shell by using this command 
 
-* Navigate to ``Build, Execution, Deployment -> Build Tools -> Gradle -> Runner`` (or search for `runner`)
-  * Windows: this is in "Settings"
-  * MacOS: this is in "Preferences"
-* Set "Delegate IDE build/run actions to gradle" to true
-* Set "Run test using:" to "Gradle Test Runner"
+``start AddNewStudentFlow addStudentRequest: {fName: "Jon", lName: "Snow", fatherName: "Rhaegar", partyA: "O=PartyA,L=London,C=GB", partyB: "O=PartyB,L=New York,C=US"}``
+ 
+**Step3:**
+ 
+  Run vaultQuery in each party's shell to check the states issued.
+ ``run vaultQuery contractStateType: com.template.states.StudentsStateV1``
+ 
+**Step4:**
+Perform explicit upgrade to the contracts defined in StudentsContractV2. It can be done by running the 
+client ExplicitContractAndStateUpgrade using below command
 
-If you would prefer to use the built in IntelliJ JUnit test runner, you can run ``gradlew installQuasar`` which will
-copy your quasar JAR file to the lib directory. You will then need to specify ``-javaagent:lib/quasar.jar``
-and set the run directory to the project root directory for each test.
+``./gradlew runUpgradeClient``
 
-## Running the nodes
+The client uses the `ContractUpgradeFlow` to upgrade the contracts and states to a new version.
 
-See https://docs.corda.net/tutorial-cordapp.html#running-the-example-cordapp.
+**Step5:**
 
-## Interacting with the nodes
+Run vaultQuery in each party's shell to check the upgraded states issued. Notice that the old states would have been consumed.
 
-### Shell
-
-When started via the command line, each node will display an interactive shell:
-
-    Welcome to the Corda interactive shell.
-    Useful commands include 'help' to see what is available, and 'bye' to shut down the node.
-    
-    Tue Nov 06 11:58:13 GMT 2018>>>
-
-You can use this shell to interact with your node. For example, enter `run networkMapSnapshot` to see a list of 
-the other nodes on the network:
-
-    Tue Nov 06 11:58:13 GMT 2018>>> run networkMapSnapshot
-    [
-      {
-      "addresses" : [ "localhost:10002" ],
-      "legalIdentitiesAndCerts" : [ "O=Notary, L=London, C=GB" ],
-      "platformVersion" : 3,
-      "serial" : 1541505484825
-    },
-      {
-      "addresses" : [ "localhost:10005" ],
-      "legalIdentitiesAndCerts" : [ "O=PartyA, L=London, C=GB" ],
-      "platformVersion" : 3,
-      "serial" : 1541505382560
-    },
-      {
-      "addresses" : [ "localhost:10008" ],
-      "legalIdentitiesAndCerts" : [ "O=PartyB, L=New York, C=US" ],
-      "platformVersion" : 3,
-      "serial" : 1541505384742
-    }
-    ]
-    
-    Tue Nov 06 12:30:11 GMT 2018>>> 
-
-You can find out more about the node shell [here](https://docs.corda.net/shell.html).
-
-### Client
-
-`clients/src/main/kotlin/com/template/Client.kt` defines a simple command-line client that connects to a node via RPC 
-and prints a list of the other nodes on the network.
-
-#### Running the client
-
-##### Via the command line
-
-Run the `runTemplateClient` Gradle task. By default, it connects to the node with RPC address `localhost:10006` with 
-the username `user1` and the password `test`.
-
-##### Via IntelliJ
-
-Run the `Run Template Client` run configuration. By default, it connects to the node with RPC address `localhost:10006` 
-with the username `user1` and the password `test`.
-
-### Webserver
-
-`clients/src/main/kotlin/com/template/webserver/` defines a simple Spring webserver that connects to a node via RPC and 
-allows you to interact with the node over HTTP.
-
-The API endpoints are defined here:
-
-     clients/src/main/kotlin/com/template/webserver/Controller.kt
-
-And a static webpage is defined here:
-
-     clients/src/main/resources/static/
-
-#### Running the webserver
-
-##### Via the command line
-
-Run the `runTemplateServer` Gradle task. By default, it connects to the node with RPC address `localhost:10006` with 
-the username `user1` and the password `test`, and serves the webserver on port `localhost:10050`.
-
-##### Via IntelliJ
-
-Run the `Run Template Server` run configuration. By default, it connects to the node with RPC address `localhost:10006` 
-with the username `user1` and the password `test`, and serves the webserver on port `localhost:10050`.
-
-#### Interacting with the webserver
-
-The static webpage is served on:
-
-    http://localhost:10050
-
-While the sole template endpoint is served on:
-
-    http://localhost:10050/templateendpoint
-    
-# Extending the template
-
-You should extend this template as follows:
-
-* Add your own state and contract definitions under `contracts/src/main/kotlin/`
-* Add your own flow definitions under `workflows/src/main/kotlin/`
-* Extend or replace the client and webserver under `clients/src/main/kotlin/`
-
-For a guided example of how to extend this template, see the Hello, World! tutorial 
-[here](https://docs.corda.net/hello-world-introduction.html).
+ ``run vaultQuery contractStateType: com.template.states.StudentsStateV2``
+ 
+ That's all now you have a new state with upgraded data in the corda and for flow execution also.
+  
